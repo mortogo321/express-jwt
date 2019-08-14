@@ -6,6 +6,9 @@
 - Objection
 - MySQL
 
+Video example:  
+https://www.loom.com/share/d9a421b76b4b4453b84058411d42e2a3
+
 #### Installation
 
 Prerequisite:

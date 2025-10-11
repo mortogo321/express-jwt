@@ -1,60 +1,82 @@
 require('dotenv').config();
+const path = require('path');
 
 module.exports = {
   development: {
-    client: 'mysql',
+    client: 'mysql2',
     connection: {
-      host: process.env.DB_HOST,
+      host: process.env.DB_HOST || '127.0.0.1',
+      port: process.env.DB_PORT || 3306,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME
+      database: process.env.DB_NAME,
+      charset: 'utf8mb4'
+    },
+    pool: {
+      min: 2,
+      max: 10,
+      acquireTimeoutMillis: 30000,
+      idleTimeoutMillis: 30000
     },
     migrations: {
       tableName: 'migrations',
-      directory: __dirname + '/db/migrations'
+      directory: path.join(__dirname, 'db', 'migrations')
     },
     seeds: {
-      directory: __dirname + '/db/seeds/development'
-    }
+      directory: path.join(__dirname, 'db', 'seeds', 'development')
+    },
+    useNullAsDefault: true
   },
   staging: {
-    client: 'mysql',
+    client: 'mysql2',
     connection: {
       host: process.env.DB_HOST,
+      port: process.env.DB_PORT || 3306,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME
+      database: process.env.DB_NAME,
+      charset: 'utf8mb4',
+      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: true } : false
     },
     pool: {
       min: 2,
-      max: 10
+      max: 10,
+      acquireTimeoutMillis: 30000,
+      idleTimeoutMillis: 30000
     },
     migrations: {
       tableName: 'migrations',
-      directory: __dirname + '/db/migrations'
+      directory: path.join(__dirname, 'db', 'migrations')
     },
     seeds: {
-      directory: __dirname + '/db/seeds/staging'
-    }
+      directory: path.join(__dirname, 'db', 'seeds', 'staging')
+    },
+    useNullAsDefault: true
   },
   production: {
-    client: 'mysql',
+    client: 'mysql2',
     connection: {
       host: process.env.DB_HOST,
+      port: process.env.DB_PORT || 3306,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME
+      database: process.env.DB_NAME,
+      charset: 'utf8mb4',
+      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: true } : false
     },
     pool: {
       min: 2,
-      max: 10
+      max: 10,
+      acquireTimeoutMillis: 30000,
+      idleTimeoutMillis: 30000
     },
     migrations: {
       tableName: 'migrations',
-      directory: __dirname + '/db/migrations'
+      directory: path.join(__dirname, 'db', 'migrations')
     },
     seeds: {
-      directory: __dirname + '/db/seeds/production'
-    }
+      directory: path.join(__dirname, 'db', 'seeds', 'production')
+    },
+    useNullAsDefault: true
   }
 };

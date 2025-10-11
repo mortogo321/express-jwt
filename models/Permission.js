@@ -4,63 +4,76 @@ const knex = require('../db');
 Model.knex(knex);
 
 /**
-* @typedef PermissionSuspend
-* @property {boolean} view - - eg: true
-* @property {boolean} create - - eg: false
-* @property {boolean} edit - - eg: false
-* @property {boolean} delete - - eg: false
-* @property {boolean} ban - - eg: false
-* @property {boolean} suspended - - eg: false
-*/
-
-/**
-* @typedef PermissionEdit
-* @property {boolean} view - - eg: true
-* @property {boolean} create - - eg: false
-* @property {boolean} edit - - eg: false
-* @property {boolean} delete - - eg: false
-*/
-
-/**
-* @typedef Permission
-* @property {integer} role_id.required
-* @property {PermissionSuspend.model} store.required - Store permission
-* @property {PermissionSuspend.model} member.required - Member permission
-* @property {PermissionEdit.model} package.required - Package permission
-* @property {PermissionEdit.model} billing.required - Billing permission
-*/
-
-/**
-* @typedef PermissionPut
-* @property {PermissionSuspend.model} store.required - Store permission
-* @property {PermissionSuspend.model} member.required - Member permission
-* @property {PermissionEdit.model} package.required - Package permission
-* @property {PermissionEdit.model} billing.required - Billing permission
-*/
-
-/**
-* @typedef PermissionResponse
-* @property {integer} id
-* @property {PermissionSuspend.model} store
-* @property {PermissionSuspend.model} member
-* @property {PermissionEdit.model} package
-* @property {PermissionEdit.model} billing
-*/
+ * @swagger
+ * components:
+ *   schemas:
+ *     Permission:
+ *       type: object
+ *       required:
+ *         - role_id
+ *         - permission
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: Auto-generated permission ID
+ *         role_id:
+ *           type: integer
+ *           description: Foreign key to roles table
+ *         permission:
+ *           type: string
+ *           description: Permission identifier
+ *         resource:
+ *           type: string
+ *           description: Resource this permission applies to
+ *         actions:
+ *           type: object
+ *           description: Actions allowed (view, create, edit, delete, etc)
+ *           properties:
+ *             view:
+ *               type: boolean
+ *             create:
+ *               type: boolean
+ *             edit:
+ *               type: boolean
+ *             delete:
+ *               type: boolean
+ */
 
 class Permission extends Model {
   static get tableName() {
     return 'permissions';
   }
 
+  static get idColumn() {
+    return 'id';
+  }
+
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['store', 'member', 'package', 'billing'],
+      required: ['role_id'],
+
       properties: {
-        store: { type: 'object' },
-        member: { type: 'object' },
-        package: { type: 'object' },
-        billing: { type: 'object' }
+        id: { type: 'integer' },
+        role_id: { type: 'integer' },
+        permission: { type: 'string', maxLength: 255 },
+        resource: { type: ['string', 'null'], maxLength: 255 },
+        actions: { type: ['object', 'null'] }
+      }
+    };
+  }
+
+  static get relationMappings() {
+    const Role = require('./Role');
+
+    return {
+      role: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: Role,
+        join: {
+          from: 'permissions.role_id',
+          to: 'roles.id'
+        }
       }
     };
   }

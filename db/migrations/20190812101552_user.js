@@ -1,19 +1,28 @@
-const tabaleName = 'users';
+const tableName = 'users';
 
-exports.up = knex => {
-  return knex.schema.createTable(tabaleName, table => {
-    table.increments('id');
-    table.integer('role_id').unsigned();
-    table.string('username');
-    table.string('password');
-    table.string('email');
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+exports.up = async function(knex) {
+  return knex.schema.createTable(tableName, table => {
+    table.increments('id').primary();
+    table.integer('role_id').unsigned().notNullable();
+    table.string('username', 255).notNullable().unique();
+    table.string('password', 255).notNullable();
+    table.string('email', 255).notNullable().unique();
+    table.timestamps(true, true);
 
-    table.unique('username');
-    table.unique('email');
-    table.foreign('role_id').references('roles.id');
+    table.foreign('role_id').references('id').inTable('roles').onDelete('RESTRICT');
+    table.index('role_id');
+    table.index('email');
   });
 };
 
-exports.down = knex => {
-  return knex.schema.dropTable(tabaleName);
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+exports.down = async function(knex) {
+  return knex.schema.dropTableIfExists(tableName);
 };

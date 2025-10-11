@@ -1,15 +1,22 @@
-const tabaleName = 'roles';
+const tableName = 'roles';
 
-exports.up = knex => {
-  return knex.schema.createTable(tabaleName, table => {
-    table.increments('id');
-    table.string('role');
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+exports.up = async function(knex) {
+  return knex.schema.createTable(tableName, table => {
+    table.increments('id').primary();
+    table.string('role', 255).notNullable().unique();
     table.text('description').nullable();
-
-    table.unique('role');
+    table.timestamps(true, true);
   });
 };
 
-exports.down = knex => {
-  return knex.schema.dropTable(tabaleName);
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+exports.down = async function(knex) {
+  return knex.schema.dropTableIfExists(tableName);
 };

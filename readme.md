@@ -70,7 +70,7 @@ The response includes a Bearer `token` used for subsequent authenticated request
 **Admin** — requires JWT with `admin` role
 - `/admin/users`, `/admin/roles`, `/admin/permissions` — each supports list, create, get-by-id, update, delete
 
-**User** — requires JWT with `user` or `admin` role
+**User** — requires JWT with `user` role
 - `GET /user/profile` (read-only stub)
 
 ## Project Structure

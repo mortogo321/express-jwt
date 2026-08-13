@@ -18,7 +18,7 @@ Note: `POST /auth/refresh` exists as a route but currently returns `501 Not Impl
 
 ## Tech Stack
 
-- Express (4.x)
+- Express (5.x)
 - `jsonwebtoken` + `passport-jwt` for JWT authentication
 - Objection.js on top of Knex (ORM + query builder)
 - MySQL via `mysql2`

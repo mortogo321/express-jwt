@@ -22,9 +22,10 @@
   ],
   "author": "sekseason",
   "license": "ISC",
+  "private": true,
+  "packageManager": "bun@1.4.2",
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "bun": ">=1.4.0"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

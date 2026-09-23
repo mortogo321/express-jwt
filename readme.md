@@ -28,21 +28,21 @@ Note: `POST /auth/refresh` exists as a route but currently returns `501 Not Impl
 
 ## Quickstart
 
-Requirements: Node.js >= 18, MySQL 5.7+ or 8.
+Requirements: Bun >= 1.4 (or Node.js >= 18), MySQL 5.7+ or 8.
 
 ```bash
 git clone <repo-url>
 cd express-jwt
-yarn install
+bun install
 
 cp .env.dist .env
 # set DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, JWT_SECRET in .env
 
 mysql -u root -p -e "CREATE DATABASE express_jwt_db;"
-yarn migrate
-yarn seed
+bun run migrate
+bun run seed
 
-yarn dev
+bun run dev
 # API: http://localhost:8000
 # Swagger UI: http://localhost:8000/api-docs
 ```

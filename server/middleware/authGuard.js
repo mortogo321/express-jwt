@@ -15,19 +15,18 @@ const passportOptions = {
   }
 };
 
-const jwtStrategy = new Strategy(passportOptions, async (req, payload, done) => {
+// The required role travels in the strategy closure instead of mutating
+// req.params, so real `:role` route params can never be clobbered.
+const buildJwtStrategy = (requiredRole) => new Strategy(passportOptions, async (req, payload, done) => {
   try {
-    // Get role from request context
-    const requestedRole = req.params.role;
-
-    if (!requestedRole) {
+    if (!requiredRole) {
       return done(new Error('Role not specified'), false);
     }
 
     // Fetch role from database
     const role = await Role
       .query()
-      .where('role', requestedRole)
+      .where('role', requiredRole)
       .first();
 
     if (!role) {
@@ -59,14 +58,23 @@ const jwtStrategy = new Strategy(passportOptions, async (req, payload, done) => 
   }
 });
 
-passport.use(jwtStrategy);
+// One strategy per required role, created lazily. The role lives in the
+// strategy closure — never on req.params — so real `:role` route params
+// can never be clobbered or leak between requests.
+const strategies = {};
+const strategyFor = (role) => {
+  const name = `jwt-${role}`;
+  if (!strategies[name]) {
+    strategies[name] = buildJwtStrategy(role);
+    passport.use(name, strategies[name]);
+  }
+  return name;
+};
 
 const authGuard = {
   jwt(role) {
     return (req, res, next) => {
-      req.params.role = role;
-
-      passport.authenticate('jwt', { session: false }, (err, user, info) => {
+      passport.authenticate(strategyFor(role), { session: false }, (err, user, info) => {
         if (err) {
           return res.status(401).json({
             error: 'Authentication failed',

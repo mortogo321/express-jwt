@@ -5,6 +5,14 @@ const Role = require('../../../models/Role');
 
 const router = express.Router();
 
+// Whitelist client-controlled fields to prevent mass assignment.
+const pickRoleFields = (body = {}) => {
+  const out = {};
+  if (body.role !== undefined) out.role = body.role;
+  if (body.description !== undefined) out.description = body.description;
+  return out;
+};
+
 /**
  * @route GET /admin/roles
  * @group Administrator
@@ -17,7 +25,7 @@ router.get('/', async (req, res, next) => {
   try {
     await Role
       .query()
-      .eager('[permissions]')
+      .withGraphFetched('[permissions]')
       .omit(['role_id'])
       .then(roles => res.json(roles));
   } catch (error) {
@@ -49,7 +57,7 @@ router.post('/', [
   try {
     await Role
       .query()
-      .insert(req.body)
+      .insert(pickRoleFields(req.body))
       .then(role => res.json(role));
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
@@ -77,7 +85,7 @@ router.get('/:id', async (req, res, next) => {
   try {
     const role = await Role
       .query()
-      .eager('[permissions]')
+      .withGraphFetched('[permissions]')
       .omit(['role_id'])
       .findById(id);
 
@@ -119,7 +127,7 @@ router.put('/:id', [
   try {
     const role = await Role
       .query()
-      .patchAndFetchById(id, req.body);
+      .patchAndFetchById(id, pickRoleFields(req.body));
 
     if (role) {
       res.json(role);

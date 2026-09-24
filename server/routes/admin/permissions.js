@@ -5,6 +5,21 @@ const Permission = require('../../../models/Permission');
 
 const router = express.Router();
 
+// Whitelist client-controlled fields to prevent mass assignment.
+const pickPermissionFields = (body = {}) => {
+  const out = {};
+  if (body.role_id !== undefined) out.role_id = body.role_id;
+  if (body.permission !== undefined) out.permission = body.permission;
+  if (body.resource !== undefined) out.resource = body.resource;
+  if (body.actions !== undefined) out.actions = body.actions;
+  return out;
+};
+
+const permissionRules = [
+  check('role_id').isInt().withMessage('role_id must be an integer'),
+  check('permission').trim().notEmpty().withMessage('permission is required'),
+];
+
 /**
  * @route GET /admin/permissions
  * @group Administrator
@@ -33,12 +48,7 @@ router.get('/', async (req, res, next) => {
  * @returns {any} 500 - Internal error
  * @security JWT
  */
-router.post('/', [
-  check('store').not().isEmpty(),
-  check('member').not().isEmpty(),
-  check('package').not().isEmpty(),
-  check('billing').not().isEmpty()
-], async (req, res, next) => {
+router.post('/', permissionRules, async (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
@@ -50,7 +60,7 @@ router.post('/', [
   try {
     await Permission
       .query()
-      .insert(req.body)
+      .insert(pickPermissionFields(req.body))
       .then(permission => res.json(permission));
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
@@ -102,12 +112,7 @@ router.get('/:id', async (req, res, next) => {
  * @returns {any} 500 - Internal error
  * @security JWT
  */
-router.put('/:id', [
-  check('store').not().isEmpty(),
-  check('member').not().isEmpty(),
-  check('package').not().isEmpty(),
-  check('billing').not().isEmpty()
-], async (req, res, next) => {
+router.put('/:id', permissionRules, async (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
@@ -121,7 +126,7 @@ router.put('/:id', [
   try {
     const permission = await Permission
       .query()
-      .patchAndFetchById(id, req.body);
+      .patchAndFetchById(id, pickPermissionFields(req.body));
 
     if (permission) {
       res.json(permission);

@@ -6,6 +6,18 @@ const User = require('../../../models/User');
 
 const router = express.Router();
 
+const USER_GRAPH = '[role.[permissions]]';
+
+// Whitelist client-controlled fields to prevent mass assignment.
+const pickUserFields = (body = {}) => {
+  const out = {};
+  if (body.username !== undefined) out.username = body.username;
+  if (body.password !== undefined) out.password = body.password;
+  if (body.email !== undefined) out.email = body.email;
+  if (body.role_id !== undefined) out.role_id = body.role_id;
+  return out;
+};
+
 /**
  * @route GET /admin/users
  * @group Administrator
@@ -19,7 +31,7 @@ router.get('/', async (req, res, next) => {
     await User
       .query()
       .omit(['password'])
-      .eager('[role.[permissions]]')
+      .withGraphFetched(USER_GRAPH)
       .then(users => res.json(users));
   } catch (error) {
     next(error);
@@ -40,7 +52,7 @@ router.post('/', [
   check('username').isLength({ min: 4 }),
   check('password')
     .isLength({ min: 6 })
-    .custom((value, { req, loc, path }) => {
+    .custom((value, { req }) => {
       if (value !== req.body.confirm_password) {
         throw new Error("Passwords don't match");
       } else {
@@ -58,17 +70,16 @@ router.post('/', [
       .json({ errors: errors.array() });
   }
 
-  delete req.body.confirm_password;
+  const data = pickUserFields(req.body);
 
-  await bcrypt.hash(req.body.password, 10)
-    .then(hash => req.body.password.password = hash);
+  data.password = await bcrypt.hash(data.password, 10);
 
   try {
     await User
       .query()
-      .insert(req.body)
+      .insert(data)
       .omit(['password'])
-      .eager('[role.[permissions]]')
+      .withGraphFetched(USER_GRAPH)
       .then(user => res.json(user));
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
@@ -97,7 +108,7 @@ router.get('/:id', async (req, res, next) => {
     const user = await User
       .query()
       .omit(['password'])
-      .eager('[role.[permissions]]')
+      .withGraphFetched(USER_GRAPH)
       .findById(id);
 
     if (user) {
@@ -126,7 +137,7 @@ router.put('/:id', [
   check('username').isLength({ min: 4 }),
   check('password')
     .isLength({ min: 6 })
-    .custom((value, { req, loc, path }) => {
+    .custom((value, { req }) => {
       if (value !== req.body.confirm_password) {
         throw new Error("Passwords don't match");
       } else {
@@ -146,17 +157,18 @@ router.put('/:id', [
 
   let id = parseInt(req.params.id);
 
-  delete req.body.confirm_password;
+  const data = pickUserFields(req.body);
 
-  await bcrypt.hash(req.body.password, 10)
-    .then(hash => req.body.password.password = hash);
+  if (data.password !== undefined) {
+    data.password = await bcrypt.hash(data.password, 10);
+  }
 
   try {
     const user = await User
       .query()
       .omit(['password'])
-      .eager('[role.[permissions]]')
-      .patchAndFetchById(id, req.body);
+      .withGraphFetched(USER_GRAPH)
+      .patchAndFetchById(id, data);
 
     if (user) {
       res.json(user);

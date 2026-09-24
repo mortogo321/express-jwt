@@ -2,7 +2,13 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const passport = require('passport');
+
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is not set');
+}
 
 const environment = process.env.NODE_ENV || 'development';
 
@@ -15,19 +21,37 @@ const userRouter = require('./routes/user');
 
 const app = express();
 
-// Body parser middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.set('trust proxy', 1);
+app.use(helmet());
 
-// CORS middleware with proper configuration
+// Body parser middleware
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+
+// CORS middleware with proper configuration.
+// Note: '*' cannot be combined with credentials, so an explicit origin list
+// is required when CORS credentials are needed.
+const corsOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || '*',
-  credentials: true,
+  origin: corsOrigins.length > 0 && !corsOrigins.includes('*') ? corsOrigins : '*',
+  credentials: corsOrigins.length > 0 && !corsOrigins.includes('*'),
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
 };
 app.use(cors(corsOptions));
+
+// Basic brute-force protection for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 100,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+});
+app.use('/auth', authLimiter);
 
 // Initialize Passport
 app.use(passport.initialize());
